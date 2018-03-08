@@ -54,7 +54,7 @@ def main():
                 del doc['profile']
                 dict_merge(document, doc)
 
-    with tempfile.TemporaryFile(delete=False) as fd:
+    with tempfile.NamedTemporaryFile(delete=False) as fd:
         path = fd.name
         fd.write(yaml.dump(document, encoding='utf-8'))
 
@@ -62,4 +62,3 @@ def main():
     print(cmd)
     os.system(cmd)
     os.remove(path)
-    
