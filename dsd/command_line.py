@@ -14,26 +14,40 @@ def environ_constructor(loader, node):
 yaml.add_constructor(u'tag:yaml.org,2002:str', environ_constructor)
 
 
-# https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
-def dict_merge(dct, merge_dct):
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
-    updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
-    ``dct``.
-    :param dct: dict onto which the merge is executed
-    :param merge_dct: dct merged into dct
-    :return: None
-    """
-    for k, v in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
-            dict_merge(dct[k], merge_dct[k])
-        else:
-            dct[k] = merge_dct[k]
+def merge(a, b):
+    if isinstance(a, dict) and isinstance(b, collections.Mapping):
+        return dict_merge(a, b)
+    elif isinstance(a, list) and isinstance(b, collections.Sequence):
+        return list_merge(a, b)
+    else:
+        return b
+
+
+def dict_merge(into, dict):
+    result = {}
+    result.update(into)
+
+    for key in dict.keys():
+        result[key] = merge(into[key] if key in into else {}, dict[key])
+
+    return result
+
+
+def list_merge(into, list):
+    result = []
+    result.extend(into)
+    result.extend(list)
+    return result
 
 
 def main():
     filename = sys.argv[1]
+
+    if sys.argv[2] in ('--out', '-o'):
+        docker = False
+        del sys.argv[2]
+    else:
+        docker = True
 
     try:
         param_sep = sys.argv.index('--')
@@ -47,18 +61,22 @@ def main():
         document = {}
 
         docs = yaml.load_all(fp)
-        dict_merge(document, next(docs))
+        document = dict_merge(document, next(docs))
 
         for doc in docs:
             if doc['profile'] in profiles:
                 del doc['profile']
-                dict_merge(document, doc)
+                document = dict_merge(document, doc)
 
-    with tempfile.NamedTemporaryFile(delete=False) as fd:
-        path = fd.name
-        fd.write(yaml.dump(document, encoding='utf-8'))
+    if docker:
+        with tempfile.NamedTemporaryFile(delete=False) as fd:
+            path = fd.name
+            fd.write(yaml.dump(document, encoding='utf-8'))
 
-    cmd = "docker stack deploy -c {} {}".format(path, " ".join(args))
-    print(cmd)
-    os.system(cmd)
-    os.remove(path)
+        cmd = "docker stack deploy -c {} {}".format(path, " ".join(args))
+        print(cmd)
+        os.system(cmd)
+        os.remove(path)
+    else:
+        yaml.safe_dump(document, sys.stdout, allow_unicode=True,
+                       default_flow_style=False)
