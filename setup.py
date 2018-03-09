@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='dsd',
-      version='0.1.1',
+      version='0.1.2',
       description='Yaml profiles for docker stack deploy',
       url='https://github.com/cionkubes/dsd',
       author='Erlend Tobiassen',
@@ -11,7 +11,7 @@ setup(name='dsd',
           'PyYaml',
       ],
       packages=find_packages(),
-      entry_points = {
+      entry_points={
           'console_scripts': ['dsd=dsd.command_line:main'],
       }
-)
+      )
