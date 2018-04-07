@@ -7,11 +7,15 @@ import tempfile
 import yaml
 
 
-def environ_constructor(loader, node):
-    return node.value.format(**os.environ)
-
-
-yaml.add_constructor(u'tag:yaml.org,2002:str', environ_constructor)
+def elem_merge(x):
+    if isinstance(x, dict):
+        return {key: elem_merge(val) for key, val in x.items()}
+    elif isinstance(x, list):
+        return [elem_merge(val) for val in x]
+    elif isinstance(x, str):
+        return x.format(**os.environ)
+    else:
+        return x
 
 
 def merge(a, b):
@@ -20,7 +24,7 @@ def merge(a, b):
     elif isinstance(a, list) and isinstance(b, collections.Sequence):
         return list_merge(a, b)
     else:
-        return b
+        return elem_merge(b)
 
 
 def dict_merge(into, dict):
@@ -34,10 +38,12 @@ def dict_merge(into, dict):
 
 
 def list_merge(into, list):
+    print("list")
     result = []
     result.extend(into)
     result.extend(list)
-    return result
+
+    return [elem_merge(x) for x in result]
 
 
 def main():
@@ -61,12 +67,12 @@ def main():
         document = {}
 
         docs = yaml.load_all(fp)
-        document = dict_merge(document, next(docs))
+        document = merge(document, next(docs))
 
         for doc in docs:
             if doc['profile'] in profiles:
                 del doc['profile']
-                document = dict_merge(document, doc)
+                document = merge(document, doc)
 
     if docker:
         with tempfile.NamedTemporaryFile(delete=False) as fd:
