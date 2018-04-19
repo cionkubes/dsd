@@ -38,7 +38,6 @@ def dict_merge(into, dict):
 
 
 def list_merge(into, list):
-    print("list")
     result = []
     result.extend(into)
     result.extend(list)
