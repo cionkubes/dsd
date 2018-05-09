@@ -57,7 +57,7 @@ def main():
     try:
         param_sep = sys.argv.index('--')
     except:
-        param_sep = -1
+        param_sep = len(sys.argv)
 
     profiles = sys.argv[2:param_sep]
     args = sys.argv[param_sep+1:]

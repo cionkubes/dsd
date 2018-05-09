@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='dsd',
-      version='0.1.4',
+      version='0.1.5',
       description='Yaml profiles for docker stack deploy',
       url='https://github.com/cionkubes/dsd',
       author='Erlend Tobiassen',
